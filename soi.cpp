@@ -3,34 +3,33 @@
  * (c) 2013 - Mathias Rohnstock
  **/
 
-#include <string>
-#include <string.h>
-#include <sstream>
-#include <iostream>
-#include <unistd.h>
-#include <v8.h>
-#include <node.h>
-#include <pthread.h>
+#include "process.h"
 
 #define VERSION     "0.1-dev"
 
-using namespace std;
-
+// main program
 class SOI : node::ObjectWrap
 {
     private:
+        vector<Process *> processes;
+
         // pthread
         volatile bool m_stoprequested;
         volatile bool m_running;
         pthread_mutex_t m_mutex;
         pthread_t m_thread;
-        
+
+        void setProcesses(Process *p)
+        {
+            SOI::processes.push_back(p);
+        }
+
         static void *start_thread(void *obj)
         {
             reinterpret_cast<SOI *>(obj)->do_work();
             return NULL;
         }
-        
+
         void do_work()
         {
             while (!m_stoprequested)
@@ -45,16 +44,15 @@ class SOI : node::ObjectWrap
         static v8::Persistent<v8::FunctionTemplate> s_ct;
         static void Init(v8::Handle<v8::Object> target)
         {
-            v8::HandleScope scope;
-            
             v8::Local<v8::FunctionTemplate> t = v8::FunctionTemplate::New(New);
-            
+
             s_ct = v8::Persistent<v8::FunctionTemplate>::New(t);
             s_ct->InstanceTemplate()->SetInternalFieldCount(1);
             s_ct->SetClassName(v8::String::NewSymbol("SOI"));
 
-            NODE_SET_PROTOTYPE_METHOD(s_ct, "version", version);
-            
+            NODE_SET_PROTOTYPE_METHOD(s_ct, "version",  version);
+            NODE_SET_PROTOTYPE_METHOD(s_ct, "add",      add);
+
             target->Set(v8::String::NewSymbol("SOI"),
                 s_ct->GetFunction());
         }
@@ -72,7 +70,18 @@ class SOI : node::ObjectWrap
         {
             stop();
         }
-        
+
+        void addProcess(string name)
+        {
+            Process *p = new Process(name);
+            SOI::setProcesses(p);
+        }
+
+        void removeProcess(string name)
+        {
+            // TODO
+        }
+
         string getVersion()
         {
             stringstream version;
@@ -98,11 +107,24 @@ class SOI : node::ObjectWrap
 
         static v8::Handle<v8::Value> New(const v8::Arguments& args)
         {
-            v8::HandleScope scope;
             SOI* soi = new SOI();
             soi->go();
             soi->Wrap(args.This());
             return args.This();
+        }
+
+        static v8::Handle<v8::Value> add(const v8::Arguments& args)
+        {
+            SOI* soi = node::ObjectWrap::Unwrap<SOI>(args.This());
+            v8::String::Utf8Value param(args[0]->ToString());
+            std::string input = std::string(*param);
+
+            if (input.compare("undefined") == 0)
+                return v8::String::New("at least on param is missing");
+
+            soi->addProcess(input);
+
+            return v8::String::New("process added");
         }
 
         static v8::Handle<v8::Value> version(const v8::Arguments& args)
