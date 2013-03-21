@@ -1,3 +1,3 @@
 #!/bin/bash
 cd /opt/shutdown-on-idle
-node start.js
+su -c "/usr/bin/node start.js &" root
