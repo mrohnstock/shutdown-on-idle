@@ -50,8 +50,10 @@ class SOI : node::ObjectWrap
             s_ct->InstanceTemplate()->SetInternalFieldCount(1);
             s_ct->SetClassName(v8::String::NewSymbol("SOI"));
 
-            NODE_SET_PROTOTYPE_METHOD(s_ct, "version",  version);
-            NODE_SET_PROTOTYPE_METHOD(s_ct, "add",      add);
+            NODE_SET_PROTOTYPE_METHOD(s_ct, "version",     version);
+            NODE_SET_PROTOTYPE_METHOD(s_ct, "add",         add);
+            NODE_SET_PROTOTYPE_METHOD(s_ct, "shutdown",    shutdown);
+            NODE_SET_PROTOTYPE_METHOD(s_ct, "processlist", processlist);
 
             target->Set(v8::String::NewSymbol("SOI"),
                 s_ct->GetFunction());
@@ -77,6 +79,21 @@ class SOI : node::ObjectWrap
             SOI::setProcesses(p);
         }
 
+        Process *getProcess(int index)
+        {
+            return(SOI::processes.at(index));
+        }
+
+        int getProcessesSize()
+        {
+            return(SOI::processes.size());
+        }
+
+        int shutdown()
+        {
+            return system("shutdown -h now &");
+        }
+
         void removeProcess(string name)
         {
             // TODO
@@ -87,6 +104,16 @@ class SOI : node::ObjectWrap
             stringstream version;
             version << "Shutdown on Idle - version " << VERSION;
             return version.str();
+        }
+
+        string getProcesses()
+        {
+            stringstream out;
+            for (int i = 0; i < SOI::getProcessesSize(); i++)
+            {
+              out << SOI::getProcess(i)->getName() << "<br />";
+            }
+            return out.str();
         }
 
         void go()
@@ -108,7 +135,7 @@ class SOI : node::ObjectWrap
         static v8::Handle<v8::Value> New(const v8::Arguments& args)
         {
             SOI* soi = new SOI();
-            soi->go();
+            //soi->go();
             soi->Wrap(args.This());
             return args.This();
         }
@@ -132,6 +159,20 @@ class SOI : node::ObjectWrap
             SOI* soi = node::ObjectWrap::Unwrap<SOI>(args.This());
 
             return v8::String::New(soi->getVersion().c_str());
+        }
+
+        static v8::Handle<v8::Value> processlist(const v8::Arguments& args)
+        {
+            SOI* soi = node::ObjectWrap::Unwrap<SOI>(args.This());
+
+            return v8::String::New(soi->getProcesses().c_str());
+        }
+
+        static v8::Handle<v8::Value> shutdown(const v8::Arguments& args)
+        {
+            SOI* soi = node::ObjectWrap::Unwrap<SOI>(args.This());
+            soi->shutdown();
+            return v8::String::New("good bye ...");
         }
 };
 

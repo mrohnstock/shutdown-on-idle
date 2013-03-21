@@ -1,0 +1,11 @@
+[Unit]
+Description=A daemon, which listen on tcp/ip connections and logfiles, to determine, if server could get shutted down
+After=network.target
+
+[Service]
+ExecStart=/opt/shutdown-on-idle/start.sh
+KillMode=process
+Type=forking
+
+[Install]
+WantedBy=multi-user.target

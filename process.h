@@ -11,6 +11,7 @@
 #include <sstream>
 #include <iostream>
 #include <unistd.h>
+#include <stdlib.h>
 #include <vector>
 #include <v8.h>
 #include <node.h>
