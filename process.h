@@ -81,6 +81,11 @@ class Process
             return Process::description;
         }
 
+        string getBinary()
+        {
+            return Process::binary;
+        }
+
         string getLogfile()
         {
             return Process::logfile;

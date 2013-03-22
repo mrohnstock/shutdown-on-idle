@@ -1,42 +1,41 @@
-var SOI  = require('./soi');
-var http = require('http');
-var url  = require('url');
-var s    = new SOI.SOI();
+var SOI     = require('./soi');
+var fs      = require('fs');
+var mime    = require('mime');
+var twig    = require('twig');
+var express = require('express');
+var path    = require('path');
+var s       = new SOI.SOI();
+var app     = express();
 
-http.createServer(function (req, res) {
-    var parts  = url.parse(req.url, true);
+app.use('/resources', express.static(__dirname + '/resources'));
 
-    if (req.url === '/version')
+app.get('/', function(req, res)
+{
+    res.render('index.twig', { soi: s });
+});
+
+app.get('/about', function(req, res)
+{
+    res.render('about.twig', { soi: s });
+});
+
+app.get('/graph', function(req, res)
+{
+    res.render('graph.twig', { soi: s });
+});
+
+app.get('/shutdown', function(req, res)
+{
+    res.end(s.shutdown());
+});
+
+app.get('/add', function(req, res)
+{
+    if (req.query.name)
     {
-        res.writeHead(200, {'Content-Type': 'text/plain'});
-        res.end(s.version());
+        s.add(req.query.name, req.query.description, req.query.binary, req.query.logfile);
+        res.render('index.twig', { message : "Process '" + req.query.name + "' added successfully!", type : "success", soi : s });
     }
-
-    if (req.url === '/shutdown')
-    {
-        res.writeHead(200, {'Content-Type': 'text/plain'});
-        res.end(s.shutdown());
-    }
-
-    if (req.url === '/')
-    {
-        res.writeHead(200, {'Content-Type': 'text/html'});
-        res.write('<html>\n');
-        res.write('<head>\n');
-        res.write('<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>\n');
-        res.write('<script src="https://raw.github.com/twitter/bootstrap/eb24718add4dd36fe92fdbdb79e6ff4ce5919300/docs/assets/js/bootstrap.min.js"></script>\n');
-        res.write('<link href="https://raw.github.com/twitter/bootstrap/eb24718add4dd36fe92fdbdb79e6ff4ce5919300/docs/assets/css/bootstrap.css" rel="stylesheet" />\n');
-        res.write('</body>\n');
-        res.write('<body>\n');
-        res.write(s.version() + '<br />\n\n<br />');
-        res.write(s.processlist() + '<br />\n');
-        res.write('<a class="btn btn-danger" href="shutdown">Shutdown</a>\n');
-        res.write('</body>\n');
-        res.end("</html>");
-    }
-
-    res.writeHead(200, {'Content-Type': 'text/plain'});
-    res.end(s.add(parts.query['add']));
-
-}).listen(12345, '0.0.0.0');
-console.log('Server running at http://0.0.0.0:12345/');
+});
+app.listen(12345);
+console.log('Server running at port 12345');

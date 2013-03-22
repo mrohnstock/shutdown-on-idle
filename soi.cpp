@@ -101,9 +101,7 @@ class SOI : node::ObjectWrap
 
         string getVersion()
         {
-            stringstream version;
-            version << "Shutdown on Idle - version " << VERSION;
-            return version.str();
+            return string(VERSION);
         }
 
         string getProcesses()
@@ -111,7 +109,7 @@ class SOI : node::ObjectWrap
             stringstream out;
             for (int i = 0; i < SOI::getProcessesSize(); i++)
             {
-              out << SOI::getProcess(i)->getName() << "<br />";
+              out << SOI::getProcess(i)->getName() << "\n";
             }
             return out.str();
         }
@@ -165,7 +163,19 @@ class SOI : node::ObjectWrap
         {
             SOI* soi = node::ObjectWrap::Unwrap<SOI>(args.This());
 
-            return v8::String::New(soi->getProcesses().c_str());
+            v8::Handle<v8::Array> value = v8::Array::New(soi->getProcessesSize());
+            for (int i = 0; i < soi->getProcessesSize(); i++)
+            {
+                v8::Handle<v8::Array> process = v8::Array::New(5); // 6 values
+                process->Set(v8::String::New("name"),        v8::String::New(soi->getProcess(i)->getName().c_str()));
+                process->Set(v8::String::New("description"), v8::String::New(soi->getProcess(i)->getDescription().c_str()));
+                process->Set(v8::String::New("binary"),      v8::String::New(soi->getProcess(i)->getBinary().c_str()));
+                process->Set(v8::String::New("logfile"),     v8::String::New(soi->getProcess(i)->getLogfile().c_str()));
+                process->Set(v8::String::New("pid"),         v8::Integer::New(soi->getProcess(i)->getPid()));
+                process->Set(v8::String::New("status"),      v8::Integer::New(soi->getProcess(i)->getStatus()));
+                value->Set(i, process);
+            }
+            return value;
         }
 
         static v8::Handle<v8::Value> shutdown(const v8::Arguments& args)

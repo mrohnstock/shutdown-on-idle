@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>Shutdown-on-Idle - {% block title %}Shutdown-on-Idle{% endblock %}</title>
+        <script src="resources/js/jquery.min.js"></script>
+        <script src="resources/js/bootstrap.min.js"></script>
+        <script src="resources/js/dataTables.min.js"></script>
+        <script src="resources/js/chart.min.js"></script>
+        <link href="resources/css/bootstrap.min.css" rel="stylesheet" />
+        <link href="resources/css/dataTables.css" rel="stylesheet" />
+        {% block header %}<!-- add some headers here -->{% endblock %}
+    </head>
+    <body>
+        {% if message is defined %}
+        <div class="alert alert-{{ type }}">
+            <a data-dismiss="alert" href="#" class="close">&times;</a>
+            <span class="{{ type }}">&nbsp;</span> {{ message }}
+        </div>
+        {% endif %}
+        <div class="container">
+            <div class="navbar">
+                <div class="navbar-inner">
+                    <a class="brand" href="/">Shutdown-on-Idle</a>
+                    <ul class="nav">
+                        <li><a href="/">Processes</a></li>
+                        <li><a href="/graph">Graph</a></li>
+                        <li><a href="/about">About</a></li>
+                    </ul>
+                </div>
+            </div>
+            {% block content %}<!-- add your content here -->{% endblock %}
+        </div>
+    </body>
+    <footer>
+        <center>{% block footer %}Shutdown-on-Idle {% if soi is defined %}v{{ soi.version }} - {% endif %}© 2013 <a href="https://github.com/drmonty/shutdown-on-idle">drmonty</a>{% endblock %}</center>
+    </footer>
+</html>

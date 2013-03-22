@@ -1,4 +1,5 @@
 build
 nbproject
+node_modules
 *.o
 *.node

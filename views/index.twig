@@ -1,0 +1,44 @@
+{% extends 'base.twig' %}
+
+{% block title %}Processes{% endblock %}
+
+{% block header %}
+    <script>
+        $(document).ready(function()
+            {
+                $("#processes").dataTable();
+            }
+        );
+    </script>
+{% endblock %}
+
+{% block content %}
+    {% if soi is defined %}
+        <table id="processes" class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Binary</th>
+                    <th>Logfile</th>
+                    <th>Pid</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for process in soi.processlist %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ process.name }}</td>
+                    <td>{{ process.description }}</td>
+                    <td>{{ process.binary }}</td>
+                    <td>{{ process.logfile }}</td>
+                    <td>{{ process.pid }}</td>
+                    <td>{{ process.status }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}
