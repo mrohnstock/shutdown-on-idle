@@ -7,8 +7,8 @@
 #include "used.h"
 
 #define VERSION "0.1-dev"
-#define MAXHOLD 6   // hold max loads
-#define SLEEP   600 // sleep sec
+#define MAXHOLD 5   // hold max loads (60min)
+#define SLEEP   600 // sleep sec (10min)
 
 // main program
 class SOI : node::ObjectWrap
@@ -105,7 +105,10 @@ class SOI : node::ObjectWrap
         {
             Used *u = new Used();
             if (SOI::getUsedsSize() > MAXHOLD)
-                delete(SOI::useds.back()); // remove last item
+            {
+                delete(SOI::useds.front()); // remove first item
+                SOI::useds.erase(SOI::useds.begin());
+            }
             SOI::useds.push_back(u);
         }
 
@@ -190,7 +193,7 @@ class SOI : node::ObjectWrap
             return -1;
         }
 
-        long getRam()
+        long getMem()
         {
             struct sysinfo info;
             if (sysinfo(&info) != -1)
@@ -284,18 +287,18 @@ class SOI : node::ObjectWrap
             v8::Handle<v8::Array> system = v8::Array::New();
             system->Set(v8::String::New("hostname"), v8::String::New(soi->getHostname().c_str()));
             system->Set(v8::String::New("os"),       v8::String::New(soi->getOS().c_str()));
-            system->Set(v8::String::New("ram"),      v8::Number::New(soi->getRam()));
+            system->Set(v8::String::New("mem"),      v8::Number::New(soi->getMem()));
             system->Set(v8::String::New("swap"),     v8::Number::New(soi->getSwap()));
             system->Set(v8::String::New("uptime"),   v8::Number::New(soi->getUptime()));
             v8::Handle<v8::Array> useds = v8::Array::New(soi->getUsedsSize());
             for (unsigned int i = 0; i < soi->getUsedsSize(); i++)
             {
-                v8::Handle<v8::Array> used = v8::Array::New();
-                used->Set(v8::String::New("timestamp"),   v8::Integer::New(soi->getUsed(i)->getTimestamp()));
-                v8::Handle<v8::Array> loads =             v8::Array::New(); // 1min, 5min, 15min
+                v8::Handle<v8::Array> loads = v8::Array::New(); // 1min, 5min, 15min
                 loads->Set(v8::String::New("onemin"),     v8::Number::New(soi->getUsed(i)->getLoad(0)));
                 loads->Set(v8::String::New("fivemin"),    v8::Number::New(soi->getUsed(i)->getLoad(1)));
                 loads->Set(v8::String::New("fifteenmin"), v8::Number::New(soi->getUsed(i)->getLoad(2)));
+                v8::Handle<v8::Array> used = v8::Array::New();
+                used->Set(v8::String::New("timestamp"),   v8::Integer::New(soi->getUsed(i)->getTimestamp()));
                 used->Set(v8::String::New("loads"),       loads);
                 used->Set(v8::String::New("mem"),         v8::Number::New(soi->getUsed(i)->getMem()));
                 used->Set(v8::String::New("swap"),        v8::Number::New(soi->getUsed(i)->getSwap()));

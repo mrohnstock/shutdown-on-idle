@@ -1,5 +1,5 @@
     var load = $("#load").get(0).getContext("2d");
-    var data = {
+    var load_data = {
             labels : [{% for used in system.useds %}"{{ used.timestamp|date("H:i") }}h"{% if not loop.last %},{% endif %}{% endfor %}],
             datasets : [
                     {
@@ -7,21 +7,21 @@
                             strokeColor : "rgba(220,220,220,1)",
                             pointColor : "rgba(220,220,220,1)",
                             pointStrokeColor : "#fff",
-                            data : [{% for used in system.useds %}{% for load in used.loads %}{{ load.onemin }}{% if not loop.last %},{% endif %}{% endfor %}{% endfor %}]
+                            data : [{% for used in system.useds %}{{ used.loads.onemin }}{% if not loop.last %},{% endif %}{% endfor %}]
                     },
                     {
                             fillColor : "rgba(151,187,205,0.5)",
                             strokeColor : "rgba(151,187,205,1)",
                             pointColor : "rgba(151,187,205,1)",
                             pointStrokeColor : "#fff",
-                            data : [{% for used in system.useds %}{% for load in used.loads %}{{ load.fivemin }}{% if not loop.last %},{% endif %}{% endfor %}{% endfor %}]
+                            data : [{% for used in system.useds %}{{ used.loads.fivemin }}{% if not loop.last %},{% endif %}{% endfor %}]
                     },
                     {
                             fillColor : "rgba(155,0,0,0.5)",
                             strokeColor : "rgba(155,0,0,1)",
                             pointColor : "rgba(155,0,0,1)",
                             pointStrokeColor : "#fff",
-                            data : [{% for used in system.useds %}{% for load in used.loads %}{{ load.fifteenmin }}{% if not loop.last %},{% endif %}{% endfor %}{% endfor %}]
+                            data : [{% for used in system.useds %}{{ used.loads.fifteenmin }}{% if not loop.last %},{% endif %}{% endfor %}]
                     }
             ]
     }
@@ -107,4 +107,4 @@
         //Function - Fires when the animation is complete
         onAnimationComplete : null
     }
-    new Chart(load).Line(data,options);
+    new Chart(load).Line(load_data,options);

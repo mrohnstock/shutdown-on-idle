@@ -49,11 +49,12 @@ class Used
         Used()
         {
             struct sysinfo info;
+            Used::setTimestamp(time(NULL));
             if (sysinfo(&info) != -1)
             {
                 Used::setLoads(info.loads[0], info.loads[1], info.loads[2]);
-                Used::setMem(info.freeram);
-                Used::setSwap(info.freeswap);
+                Used::setMem(info.totalram - info.freeram);
+                Used::setSwap(info.totalswap - info.freeswap);
                 Used::setProcess(info.procs);
             }
             else
