@@ -8,6 +8,7 @@ var s       = new SOI.SOI();
 var app     = express();
 
 app.use('/resources', express.static(__dirname + '/resources'));
+app.use(express.bodyParser());
 
 app.get('/', function(req, res)
 {
@@ -19,23 +20,27 @@ app.get('/about', function(req, res)
     res.render('about.twig', { soi: s });
 });
 
-app.get('/graph', function(req, res)
+app.get('/system', function(req, res)
 {
-    res.render('graph.twig', { soi: s });
+    res.render('system.twig', { soi: s });
 });
 
-app.get('/shutdown', function(req, res)
+app.post('/', function(req, res)
 {
-    res.end(s.shutdown());
-});
-
-app.get('/add', function(req, res)
-{
-    if (req.query.name)
+    if (req.body.name && req.body.description && req.body.binary && req.body.logfile)
     {
-        s.add(req.query.name, req.query.description, req.query.binary, req.query.logfile);
-        res.render('index.twig', { message : "Process '" + req.query.name + "' added successfully!", type : "success", soi : s });
+        if (s.add(req.body.name, req.body.description, req.body.binary, req.body.logfile))
+        {
+            res.render('index.twig', { message : "Process '" + req.body.name + "' added successfully", type : "success", soi : s });
+        }
+        res.render('index.twig', { message : "Process '" + req.body.name + "' already exists", type : "danger", soi : s });
     }
+    else if (req.body.shutdown === s.hostname())
+    {
+        s.shutdown();
+        res.render('index.twig', { message : s.hostname() + " is going down for shutdown - good bye", type : "warning", soi : s });
+    }
+    res.render('index.twig', { soi: s });
 });
 app.listen(12345);
 console.log('Server running at port 12345');

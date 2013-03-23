@@ -1,0 +1,41 @@
+<!-- Add-Process-Modal -->
+<div id="add" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="label" aria-hidden="true">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3 id="label">Add a new process</h3>
+    </div>
+    <form action="/" method="post" class="form-horizontal">
+    <fieldset>
+    <div class="modal-body">
+        <div class="control-group">
+            <label class="control-label" for="name">Name</label>
+            <div class="controls">
+                <input type="text" name="name" id="name" placeholder="i.e. bash…" required="required" />
+            </div> <!-- /controls -->
+        </div> <!-- /control-group -->
+        <div class="control-group">
+            <label class="control-label" for="description">Description</label>
+            <div class="controls">
+                <input type="text" name="description" id="description" placeholder="i.e. is pretty cool :D" required="required" />
+            </div> <!-- /controls -->
+        </div> <!-- /control-group -->
+        <div class="control-group">
+            <label class="control-label" for="binary">Binary</label>
+            <div class="controls">
+                <input type="text" name="binary" id="binary" placeholder="i.e. /bin/bash" required="required" />
+            </div> <!-- /controls -->
+        </div> <!-- /control-group -->
+        <div class="control-group">
+            <label class="control-label" for="logfile">Logfile</label>
+            <div class="controls">
+                <input type="text" name="logfile" id="logfile" placeholder="i.e. /var/log/something.log" required="required" />
+            </div> <!-- /controls -->
+        </div> <!-- /control-group -->
+    </div>
+    <div class="modal-footer btn-group" style="padding-left: 217px; padding-right: 215px;">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+        <button style="margin-left: 0px;" type="submit" class="btn btn-primary">Save</button>
+    </div>
+    </fieldset>
+    </form>
+</div>

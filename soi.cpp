@@ -4,14 +4,18 @@
  **/
 
 #include "process.h"
+#include "used.h"
 
-#define VERSION     "0.1-dev"
+#define VERSION "0.1-dev"
+#define MAXHOLD 6   // hold max loads
+#define SLEEP   600 // sleep sec
 
 // main program
 class SOI : node::ObjectWrap
 {
     private:
         vector<Process *> processes;
+        vector<Used *> useds;
 
         // pthread
         volatile bool m_stoprequested;
@@ -19,7 +23,7 @@ class SOI : node::ObjectWrap
         pthread_mutex_t m_mutex;
         pthread_t m_thread;
 
-        void setProcesses(Process *p)
+        void addProcess(Process *p)
         {
             SOI::processes.push_back(p);
         }
@@ -34,9 +38,10 @@ class SOI : node::ObjectWrap
         {
             while (!m_stoprequested)
             {
-                // do something...
+                addUsed();
                 pthread_mutex_lock(&m_mutex);
                 pthread_mutex_unlock(&m_mutex);
+                sleep(SLEEP);
             }
         }
 
@@ -53,6 +58,8 @@ class SOI : node::ObjectWrap
             NODE_SET_PROTOTYPE_METHOD(s_ct, "version",     version);
             NODE_SET_PROTOTYPE_METHOD(s_ct, "add",         add);
             NODE_SET_PROTOTYPE_METHOD(s_ct, "shutdown",    shutdown);
+            NODE_SET_PROTOTYPE_METHOD(s_ct, "hostname",    hostname);
+            NODE_SET_PROTOTYPE_METHOD(s_ct, "system",      sys);
             NODE_SET_PROTOTYPE_METHOD(s_ct, "processlist", processlist);
 
             target->Set(v8::String::NewSymbol("SOI"),
@@ -71,12 +78,35 @@ class SOI : node::ObjectWrap
         ~SOI()
         {
             stop();
+            for(unsigned int i = 0; i < SOI::getProcessesSize(); i++)
+                delete(SOI::getProcess(i));
+
+            for(unsigned int i = 0; i < SOI::getUsedsSize(); i++)
+                delete(SOI::getUsed(i));
         }
 
-        void addProcess(string name)
+        bool addProcess(const v8::Arguments& args)
         {
-            Process *p = new Process(name);
-            SOI::setProcesses(p);
+            v8::String::Utf8Value name(args[0]->ToString());
+            v8::String::Utf8Value description(args[1]->ToString());
+            v8::String::Utf8Value binary(args[2]->ToString());
+            v8::String::Utf8Value logfile(args[3]->ToString());
+
+            if ( ! SOI::processExists(string(*name)))
+            {
+                Process *p = new Process(string(*name), string(*description), string(*binary), string(*logfile));
+                SOI::addProcess(p);
+                return true;
+            }
+            return false;
+        }
+
+        void addUsed()
+        {
+            Used *u = new Used();
+            if (SOI::getUsedsSize() > MAXHOLD)
+                delete(SOI::useds.back()); // remove last item
+            SOI::useds.push_back(u);
         }
 
         Process *getProcess(int index)
@@ -84,9 +114,29 @@ class SOI : node::ObjectWrap
             return(SOI::processes.at(index));
         }
 
-        int getProcessesSize()
+        Used *getUsed(int index)
+        {
+            return(SOI::useds.at(index));
+        }
+
+        bool processExists(string name)
+        {
+            for (unsigned int i = 0; i < SOI::getProcessesSize(); i++)
+            {
+                if (SOI::getProcess(i)->getName().compare(name) == 0)
+                    return true;
+            }
+            return false;
+        }
+
+        size_t getProcessesSize()
         {
             return(SOI::processes.size());
+        }
+
+        size_t getUsedsSize()
+        {
+            return(SOI::useds.size());
         }
 
         int shutdown()
@@ -96,7 +146,14 @@ class SOI : node::ObjectWrap
 
         void removeProcess(string name)
         {
-            // TODO
+            for (unsigned int i = 0; i < SOI::getProcessesSize(); i++)
+            {
+                if(SOI::getProcess(i)->getName().compare(name) == 0)
+                {
+                    delete(SOI::getProcess(i));
+                    SOI::processes.erase(SOI::processes.begin() + i);
+                }
+            }
         }
 
         string getVersion()
@@ -104,14 +161,49 @@ class SOI : node::ObjectWrap
             return string(VERSION);
         }
 
-        string getProcesses()
+        string getHostname()
         {
-            stringstream out;
-            for (int i = 0; i < SOI::getProcessesSize(); i++)
-            {
-              out << SOI::getProcess(i)->getName() << "\n";
-            }
-            return out.str();
+            char hostname[255];
+            if (gethostname(hostname, 255) == 0)
+                return string(hostname);
+            return string("can't receive hostname!");
+        }
+
+        string getOS()
+        {
+            char version[255];
+            struct utsname buf;
+
+            if (uname(&buf) != -1)
+              sprintf(version, "%s %s", buf.sysname, buf.release);
+            else
+              sprintf(version, "unknown OS");
+
+            return string(version);
+        }
+
+        long getUptime()
+        {
+            struct sysinfo info;
+            if (sysinfo(&info) != -1)
+              return info.uptime;
+            return -1;
+        }
+
+        long getRam()
+        {
+            struct sysinfo info;
+            if (sysinfo(&info) != -1)
+              return info.totalram;
+            return -1;
+        }
+
+        long getSwap()
+        {
+            struct sysinfo info;
+            if (sysinfo(&info) != -1)
+              return info.totalswap;
+            return -1;
         }
 
         void go()
@@ -133,7 +225,7 @@ class SOI : node::ObjectWrap
         static v8::Handle<v8::Value> New(const v8::Arguments& args)
         {
             SOI* soi = new SOI();
-            //soi->go();
+            soi->go();
             soi->Wrap(args.This());
             return args.This();
         }
@@ -141,15 +233,7 @@ class SOI : node::ObjectWrap
         static v8::Handle<v8::Value> add(const v8::Arguments& args)
         {
             SOI* soi = node::ObjectWrap::Unwrap<SOI>(args.This());
-            v8::String::Utf8Value param(args[0]->ToString());
-            std::string input = std::string(*param);
-
-            if (input.compare("undefined") == 0)
-                return v8::String::New("at least on param is missing");
-
-            soi->addProcess(input);
-
-            return v8::String::New("process added");
+            return v8::Boolean::New(soi->addProcess(args));
         }
 
         static v8::Handle<v8::Value> version(const v8::Arguments& args)
@@ -164,14 +248,17 @@ class SOI : node::ObjectWrap
             SOI* soi = node::ObjectWrap::Unwrap<SOI>(args.This());
 
             v8::Handle<v8::Array> value = v8::Array::New(soi->getProcessesSize());
-            for (int i = 0; i < soi->getProcessesSize(); i++)
+            for (unsigned int i = 0; i < soi->getProcessesSize(); i++)
             {
-                v8::Handle<v8::Array> process = v8::Array::New(5); // 6 values
+                v8::Handle<v8::Array> process = v8::Array::New(); // 6 values
                 process->Set(v8::String::New("name"),        v8::String::New(soi->getProcess(i)->getName().c_str()));
                 process->Set(v8::String::New("description"), v8::String::New(soi->getProcess(i)->getDescription().c_str()));
                 process->Set(v8::String::New("binary"),      v8::String::New(soi->getProcess(i)->getBinary().c_str()));
                 process->Set(v8::String::New("logfile"),     v8::String::New(soi->getProcess(i)->getLogfile().c_str()));
-                process->Set(v8::String::New("pid"),         v8::Integer::New(soi->getProcess(i)->getPid()));
+                v8::Handle<v8::Array> pids = v8::Array::New(soi->getProcess(i)->getPidsSize());
+                for (unsigned int j = 0; j < soi->getProcess(i)->getPidsSize(); j++)
+                    process->Set(j, v8::Integer::New(soi->getProcess(i)->getPid(j)));
+                process->Set(v8::String::New("pids"),        pids);
                 process->Set(v8::String::New("status"),      v8::Integer::New(soi->getProcess(i)->getStatus()));
                 value->Set(i, process);
             }
@@ -181,8 +268,42 @@ class SOI : node::ObjectWrap
         static v8::Handle<v8::Value> shutdown(const v8::Arguments& args)
         {
             SOI* soi = node::ObjectWrap::Unwrap<SOI>(args.This());
-            soi->shutdown();
-            return v8::String::New("good bye ...");
+            return v8::Integer::New(soi->shutdown());
+        }
+
+        static v8::Handle<v8::Value> hostname(const v8::Arguments& args)
+        {
+            SOI* soi = node::ObjectWrap::Unwrap<SOI>(args.This());
+            return v8::String::New(soi->getHostname().c_str());
+        }
+
+        static v8::Handle<v8::Value> sys(const v8::Arguments& args)
+        {
+            SOI* soi = node::ObjectWrap::Unwrap<SOI>(args.This());
+
+            v8::Handle<v8::Array> system = v8::Array::New();
+            system->Set(v8::String::New("hostname"), v8::String::New(soi->getHostname().c_str()));
+            system->Set(v8::String::New("os"),       v8::String::New(soi->getOS().c_str()));
+            system->Set(v8::String::New("ram"),      v8::Number::New(soi->getRam()));
+            system->Set(v8::String::New("swap"),     v8::Number::New(soi->getSwap()));
+            system->Set(v8::String::New("uptime"),   v8::Number::New(soi->getUptime()));
+            v8::Handle<v8::Array> useds = v8::Array::New(soi->getUsedsSize());
+            for (unsigned int i = 0; i < soi->getUsedsSize(); i++)
+            {
+                v8::Handle<v8::Array> used = v8::Array::New();
+                used->Set(v8::String::New("timestamp"),   v8::Integer::New(soi->getUsed(i)->getTimestamp()));
+                v8::Handle<v8::Array> loads =             v8::Array::New(); // 1min, 5min, 15min
+                loads->Set(v8::String::New("onemin"),     v8::Number::New(soi->getUsed(i)->getLoad(0)));
+                loads->Set(v8::String::New("fivemin"),    v8::Number::New(soi->getUsed(i)->getLoad(1)));
+                loads->Set(v8::String::New("fifteenmin"), v8::Number::New(soi->getUsed(i)->getLoad(2)));
+                used->Set(v8::String::New("loads"),       loads);
+                used->Set(v8::String::New("mem"),         v8::Number::New(soi->getUsed(i)->getMem()));
+                used->Set(v8::String::New("swap"),        v8::Number::New(soi->getUsed(i)->getSwap()));
+                used->Set(v8::String::New("process"),     v8::Number::New(soi->getUsed(i)->getProcess()));
+                useds->Set(i, used);
+            }
+            system->Set(v8::String::New("useds"), useds);
+            return system;
         }
 };
 

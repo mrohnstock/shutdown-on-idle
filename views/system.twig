@@ -1,0 +1,48 @@
+{% extends 'base.twig' %}
+
+{% set system = soi.system %}
+
+{% block title %}Graph{% endblock %}
+
+{% block onready %}
+    {% include 'graph_load.twig' %}
+    {% include 'graph_process.twig' %}
+    {% include 'graph_mem.twig' %}
+    {% include 'graph_swap.twig' %}
+{% endblock %}
+
+{% block content %}
+<h3>Host <small>Information</small></h3>
+<table id="system" class="table">
+    <tbody>
+        <tr>
+            <td><strong>Hostname</strong></td>
+            <td>{{ system.hostname }}</td>
+            <td><strong>Operation System</strong></td>
+            <td>{{ system.os }}</td>
+        </tr>
+            <td><strong>Uptime</strong></td>
+            <td colspan="3">{{ ((system.uptime)/(60*60*24))//1 }} d {{ "%02d:%02d:%02d"|format(((((system.uptime)/(60*60))%24)//1),((((system.uptime)/(60))%60)//1),(((system.uptime)%60)//1)) }} h</td>
+        </tr>
+        <tr>
+            <td><strong>Available total Memory</strong></td>
+            <td>{{ "%.2f"|format((system.ram/1024)/1024) }} mb</td>
+            <td><strong>Available total Swap</strong></td>
+            <td>{{ "%.2f"|format((system.swap/1024)/1024) }} mb</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>Load <small>last hour, every 10 minute</small></h3>
+<canvas id="load" width="940px" height="300px"></canvas>
+
+<h3>Process <small>last hour, every 10 minute</small></h3>
+<canvas id="process" width="940px" height="300px"></canvas>
+
+<h3>Memory <small>last hour, every 10 minute</small></h3>
+<canvas id="mem" width="940px" height="300px"></canvas>
+
+<h3>Swap <small>last hour, every 10 minute</small></h3>
+<canvas id="swap" width="940px" height="300px"></canvas>
+
+{% endblock %}

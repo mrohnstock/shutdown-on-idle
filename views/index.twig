@@ -2,14 +2,8 @@
 
 {% block title %}Processes{% endblock %}
 
-{% block header %}
-    <script>
-        $(document).ready(function()
-            {
-                $("#processes").dataTable();
-            }
-        );
-    </script>
+{% block onready %}
+    $("#processes").dataTable();
 {% endblock %}
 
 {% block content %}
@@ -34,8 +28,8 @@
                     <td>{{ process.description }}</td>
                     <td>{{ process.binary }}</td>
                     <td>{{ process.logfile }}</td>
-                    <td>{{ process.pid }}</td>
-                    <td>{{ process.status }}</td>
+                    <td>{% for pid in process.pids %}{{ pid }}{% if not loop.last %}<br />{% endif %}{% endfor %}</td>
+                    <td>{% if process.status == -1 %}unknown{% elseif process.status == 0 %}stopped{% elseif process.status == 1 %}running{% else %}idle{% endif %}</td>
                 </tr>
             {% endfor %}
             </tbody>

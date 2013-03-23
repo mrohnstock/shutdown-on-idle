@@ -2,16 +2,28 @@
 <html lang="en">
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-        <title>Shutdown-on-Idle - {% block title %}Shutdown-on-Idle{% endblock %}</title>
+        <title>{{ soi.hostname }} - {% block title %}Shutdown-on-Idle{% endblock %}</title>
         <script src="resources/js/jquery.min.js"></script>
         <script src="resources/js/bootstrap.min.js"></script>
         <script src="resources/js/dataTables.min.js"></script>
         <script src="resources/js/chart.min.js"></script>
         <link href="resources/css/bootstrap.min.css" rel="stylesheet" />
         <link href="resources/css/dataTables.css" rel="stylesheet" />
+
+        <script>
+            $(document).ready(function()
+            {
+                $("[data-toggle=tooltip]").tooltip();
+                {% block onready %}{% endblock %}
+            });
+        </script>
+
         {% block header %}<!-- add some headers here -->{% endblock %}
     </head>
     <body>
+        {% include 'addprocess.twig' %}
+        {% include 'shutdown.twig' %}
+
         {% if message is defined %}
         <div class="alert alert-{{ type }}">
             <a data-dismiss="alert" href="#" class="close">&times;</a>
@@ -21,11 +33,15 @@
         <div class="container">
             <div class="navbar">
                 <div class="navbar-inner">
-                    <a class="brand" href="/">Shutdown-on-Idle</a>
+                    <a class="brand" href="/">{{ soi.hostname }}</a>
                     <ul class="nav">
                         <li><a href="/">Processes</a></li>
-                        <li><a href="/graph">Graph</a></li>
+                        <li><a href="/system">System</a></li>
                         <li><a href="/about">About</a></li>
+                    </ul>
+                    <ul class="nav pull-right">
+                        <li data-toggle="tooltip" data-placement="bottom" title="add a process"><a href="#add" data-toggle="modal"><i class="icon-plus"></i></a></li>
+                        <li data-toggle="tooltip" data-placement="bottom" title="shutdown {{ soi.hostname }}"><a href="#shutdown" data-toggle="modal"><i class="icon-off"></i></a></li>
                     </ul>
                 </div>
             </div>
