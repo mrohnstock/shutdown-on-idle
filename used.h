@@ -13,7 +13,7 @@ class Used
 {
     private:
         time_t timestamp;
-        vector<long> loads;     // loadavg between 1min
+        vector<float> loads;    // loadavg between 1min
         long mem;               // free mem
         long swap;              // free swap
         unsigned short process; // running processes
@@ -25,9 +25,9 @@ class Used
 
         void setLoads(long one, long five, long fifteen)
         {
-            Used::loads.push_back(one);
-            Used::loads.push_back(five);
-            Used::loads.push_back(fifteen);
+            Used::loads.push_back(((float)one) / (float)(1 << SI_LOAD_SHIFT));
+            Used::loads.push_back(((float)five) / (float)(1 << SI_LOAD_SHIFT));
+            Used::loads.push_back(((float)fifteen) / (float)(1 << SI_LOAD_SHIFT));
         }
 
         void setMem(long mem)
@@ -56,8 +56,8 @@ class Used
             if (sysinfo(&info) != -1)
             {
                 Used::setLoads(info.loads[0], info.loads[1], info.loads[2]);
-                Used::setMem(info.totalram - info.freeram);
-                Used::setSwap(info.totalswap - info.freeswap);
+                Used::setMem((info.totalram - info.freeram)/1024/1024);
+                Used::setSwap((info.totalswap - info.freeswap)/1024/1024);
                 Used::setProcess(info.procs);
             }
             else
@@ -74,7 +74,7 @@ class Used
             return Used::timestamp;
         }
 
-        long getLoad(int index)
+        float getLoad(int index)
         {
             return Used::loads.at(index);
         }
