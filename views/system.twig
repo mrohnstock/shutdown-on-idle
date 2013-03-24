@@ -23,7 +23,9 @@
         </tr>
         <tr>
             <td><strong>Uptime</strong></td>
-            <td colspan="3">{{ ((system.uptime)/(60*60*24))//1 }} d {{ "%02d:%02d:%02d"|format(((((system.uptime)/(60*60))%24)//1),((((system.uptime)/(60))%60)//1),(((system.uptime)%60)//1)) }} h</td>
+            <td>{{ ((system.uptime)/(60*60*24))//1 }} d {{ "%02d:%02d:%02d"|format(((((system.uptime)/(60*60))%24)//1),((((system.uptime)/(60))%60)//1),(((system.uptime)%60)//1)) }} h</td>
+            <td><strong>Localtime</strong></td>
+            <td>{{ "now"|date("F d, Y H:i:s") }} h</td>
         </tr>
         <tr>
             <td><strong>Available total Memory</strong></td>
