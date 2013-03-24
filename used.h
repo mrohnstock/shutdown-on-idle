@@ -49,7 +49,10 @@ class Used
         Used()
         {
             struct sysinfo info;
-            Used::setTimestamp(time(NULL));
+            time_t t = time(NULL);
+            struct tm *current = NULL;
+            current = localtime(&t);
+            Used::setTimestamp(mktime(current));
             if (sysinfo(&info) != -1)
             {
                 Used::setLoads(info.loads[0], info.loads[1], info.loads[2]);
