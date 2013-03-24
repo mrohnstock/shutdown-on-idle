@@ -7,7 +7,7 @@
 #include "used.h"
 
 #define VERSION "0.1-dev"
-#define MAXHOLD 5   // hold max loads (60min)
+#define MAXHOLD 6   // hold max loads (60min)
 #define SLEEP   600 // sleep sec (10min)
 
 // main program
