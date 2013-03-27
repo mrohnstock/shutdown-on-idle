@@ -6,9 +6,11 @@
 #include "process.h"
 #include "stat.h"
 
-#define VERSION "0.1-dev"
-#define MAXHOLD 6   // hold max loads (60min)
-#define SLEEP   600 // sleep sec (10min)
+#define VERSION     "0.1-dev"
+#define CONFIG      "config" // from executable
+#define STATMAX     6        // hold max loads (60min)
+#define STATSLEEP   600      // sleep sec (10min)
+#define SLEEP       5        // repeat pthread
 
 // main program
 class SOI : node::ObjectWrap
@@ -36,9 +38,19 @@ class SOI : node::ObjectWrap
 
         void do_work()
         {
+            time_t lastwatch = 0;
             while (!m_stoprequested)
             {
-                addStat();
+                // update stat
+                if (lastwatch < (time(NULL) - STATSLEEP))
+                {
+                    lastwatch = time(NULL);
+                    SOI::addStat();
+                }
+
+                // update processes
+                for (unsigned int i = 0; i < SOI::getProcessesSize(); i++)
+                    SOI::getProcess(i)->update();
                 pthread_mutex_lock(&m_mutex);
                 pthread_mutex_unlock(&m_mutex);
                 sleep(SLEEP);
@@ -87,6 +99,7 @@ class SOI : node::ObjectWrap
 
         bool addProcess(const v8::Arguments& args)
         {
+            ofstream config(CONFIG);
             v8::String::Utf8Value name(args[0]->ToString());
             v8::String::Utf8Value description(args[1]->ToString());
             v8::String::Utf8Value binary(args[2]->ToString());
@@ -96,20 +109,27 @@ class SOI : node::ObjectWrap
             {
                 Process *p = new Process(string(*name), string(*description), string(*binary), string(*logfile));
                 SOI::addProcess(p);
+                if (config.is_open())
+                {
+                    for (unsigned int i = 0; i < SOI::getProcessesSize(); i++)
+                        config << SOI::getProcess(i)->getName() << ";" << SOI::getProcess(i)->getDescription() << ";" << SOI::getProcess(i)->getBinary() << ";" << SOI::getProcess(i)->getLogfile() << endl;
+                }
+                config.close();
                 return true;
             }
+            config.close();
             return false;
         }
 
         void addStat()
         {
             Stat *s = new Stat();
-            if (SOI::getStatsSize() > MAXHOLD)
+            if (SOI::getStatsSize() > STATMAX)
             {
                 delete(SOI::stats.front()); // remove first item
                 SOI::stats.erase(SOI::stats.begin());
             }
-            SOI::stats.push_back(u);
+            SOI::stats.push_back(s);
         }
 
         Process *getProcess(int index)
@@ -227,7 +247,41 @@ class SOI : node::ObjectWrap
 
         static v8::Handle<v8::Value> New(const v8::Arguments& args)
         {
+            string line;
+            size_t pos, lastpos;
             SOI* soi = new SOI();
+            ifstream config(CONFIG);
+
+            if (config.is_open())
+            {
+                while(config.good())
+                {
+                    getline(config, line);
+                    if (line.compare("") != 0)
+                    {
+                        lastpos = 0;
+                        pos = line.find_first_of(';', lastpos);
+                        string name = line.substr(lastpos, pos - lastpos);
+                        lastpos = pos + 1;
+                        pos = line.find_first_of(';', lastpos);
+                        string description = line.substr(lastpos, pos - lastpos);
+                        lastpos = pos + 1;
+                        pos = line.find_first_of(';', lastpos);
+                        string binary = line.substr(lastpos, pos - lastpos);
+                        lastpos = pos + 1;
+                        pos = line.length();
+                        string logfile = line.substr(lastpos, pos - lastpos);
+                        if ( ! soi->processExists(name))
+                        {
+                            Process *p = new Process(name, description, binary, logfile);
+                            soi->addProcess(p);
+                        }
+                    }
+                }
+                cout << "Config loaded successfully!" << endl << flush;
+            }
+            config.close();
+
             soi->go();
             soi->Wrap(args.This());
             return args.This();
@@ -253,16 +307,16 @@ class SOI : node::ObjectWrap
             v8::Handle<v8::Array> value = v8::Array::New(soi->getProcessesSize());
             for (unsigned int i = 0; i < soi->getProcessesSize(); i++)
             {
-                v8::Handle<v8::Array> process = v8::Array::New(); // 6 values
+                v8::Handle<v8::Array> process = v8::Array::New();
                 process->Set(v8::String::New("name"),        v8::String::New(soi->getProcess(i)->getName().c_str()));
                 process->Set(v8::String::New("description"), v8::String::New(soi->getProcess(i)->getDescription().c_str()));
                 process->Set(v8::String::New("binary"),      v8::String::New(soi->getProcess(i)->getBinary().c_str()));
                 process->Set(v8::String::New("logfile"),     v8::String::New(soi->getProcess(i)->getLogfile().c_str()));
-                v8::Handle<v8::Array> pids = v8::Array::New(soi->getProcess(i)->getPidsSize());
+                v8::Handle<v8::Array> pids = v8::Array::New();
                 for (unsigned int j = 0; j < soi->getProcess(i)->getPidsSize(); j++)
-                    process->Set(j, v8::Integer::New(soi->getProcess(i)->getPid(j)));
+                    pids->Set(j, v8::Number::New(soi->getProcess(i)->getPid(j)));
                 process->Set(v8::String::New("pids"),        pids);
-                process->Set(v8::String::New("status"),      v8::Integer::New(soi->getProcess(i)->getStatus()));
+                process->Set(v8::String::New("status"),      v8::Number::New(soi->getProcess(i)->getStatus()));
                 value->Set(i, process);
             }
             return value;

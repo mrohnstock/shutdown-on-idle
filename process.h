@@ -8,6 +8,7 @@
 
 #include <string>
 #include <string.h>
+#include <fstream>
 #include <sstream>
 #include <iostream>
 #include <unistd.h>
@@ -78,8 +79,15 @@ class Process
             setDescription(description);
             setBinary(binary);
             setLogfile(logfile);
-            addPid(-1);
             setStatus(-1);
+            setPids();
+        }
+
+        void update()
+        {
+            Process::setPids();
+
+            // perform any other update
         }
 
         string getName()
@@ -102,6 +110,51 @@ class Process
             return Process::logfile;
         }
 
+        void setPids()
+        {
+            Process::pids.clear();
+            stringstream cmd;
+            cmd << "/bin/pidof " << Process::getBinary();
+            FILE* pipe = popen(cmd.str().c_str(), "r");
+            if (pipe)
+            {
+                char buffer[5]; // see /proc/sys/kernel/pid_max (default max 32768)
+                char c;
+                int i = 0;
+                do
+                {
+                    c = fgetc(pipe);
+                    if ((c == ' ' || c == EOF) && i != 0)
+                    {
+                        buffer[i] = '\0';
+                        i = 0;
+                        addPid(atoi(buffer));
+                        continue;
+                    }
+                    else if (c != EOF)
+                    {
+                        buffer[i] = c;
+                        i++;
+                        continue;
+                    }
+                } while(c != EOF);
+            }
+
+            if (Process::getStatus() == -1)
+            {
+                if (Process::getPidsSize() > 0)
+                    Process::setStatus(1);
+                else
+                    Process::setStatus(0);
+            }
+            else if (Process::getPidsSize() == 0)
+                Process::setStatus(0);
+            else if (Process::getPidsSize() != 0 && Process::getStatus() == 0)
+                Process::setStatus(1);
+
+            pclose(pipe);
+        }
+
         int getPid(int index)
         {
             return Process::pids.at(index);
@@ -115,6 +168,13 @@ class Process
         int getStatus()
         {
             return Process::status;
+        }
+
+        string toString()
+        {
+            stringstream out;
+            out << "Name: " << Process::getName() << ", Description: " << Process::getDescription() << ", Binary: " << Process::getBinary() << ", Logfile: " << Process::getLogfile();
+            return out.str();
         }
 };
 

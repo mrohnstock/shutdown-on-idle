@@ -12,7 +12,7 @@ app.use(express.bodyParser());
 
 app.get('/', function(req, res)
 {
-    res.render('index.twig', { soi: s });
+    res.render('watch.twig', { soi: s });
 });
 
 app.get('/about', function(req, res)
@@ -31,16 +31,16 @@ app.post('/', function(req, res)
     {
         if (s.add(req.body.name, req.body.description, req.body.binary, req.body.logfile))
         {
-            res.render('index.twig', { message : "Process '" + req.body.name + "' added successfully", type : "success", soi : s });
+            res.render('watch.twig', { message : "Process '" + req.body.name + "' added successfully", type : "success", soi : s });
         }
-        res.render('index.twig', { message : "Process '" + req.body.name + "' already exists", type : "danger", soi : s });
+        res.render('watch.twig', { message : "Process '" + req.body.name + "' already exists", type : "danger", soi : s });
     }
     else if (req.body.shutdown === s.hostname())
     {
         s.shutdown();
-        res.render('index.twig', { message : s.hostname() + " is going down for shutdown - good bye", type : "warning", soi : s });
+        res.render('watch.twig', { message : s.hostname() + " is going down for shutdown - good bye", type : "warning", soi : s });
     }
-    res.render('index.twig', { soi: s });
+    res.render('watch.twig', { soi: s });
 });
 app.listen(12345);
 console.log('Server running at port 12345');

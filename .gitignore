@@ -1,5 +1,6 @@
 build
 nbproject
 node_modules
+config
 *.o
 *.node
