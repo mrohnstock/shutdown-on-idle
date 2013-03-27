@@ -4,7 +4,7 @@
  **/
 
 #include "process.h"
-#include "used.h"
+#include "stat.h"
 
 #define VERSION "0.1-dev"
 #define MAXHOLD 6   // hold max loads (60min)
@@ -15,7 +15,7 @@ class SOI : node::ObjectWrap
 {
     private:
         vector<Process *> processes;
-        vector<Used *> useds;
+        vector<Stat *> stats;
 
         // pthread
         volatile bool m_stoprequested;
@@ -38,7 +38,7 @@ class SOI : node::ObjectWrap
         {
             while (!m_stoprequested)
             {
-                addUsed();
+                addStat();
                 pthread_mutex_lock(&m_mutex);
                 pthread_mutex_unlock(&m_mutex);
                 sleep(SLEEP);
@@ -81,8 +81,8 @@ class SOI : node::ObjectWrap
             for(unsigned int i = 0; i < SOI::getProcessesSize(); i++)
                 delete(SOI::getProcess(i));
 
-            for(unsigned int i = 0; i < SOI::getUsedsSize(); i++)
-                delete(SOI::getUsed(i));
+            for(unsigned int i = 0; i < SOI::getStatsSize(); i++)
+                delete(SOI::getStat(i));
         }
 
         bool addProcess(const v8::Arguments& args)
@@ -101,15 +101,15 @@ class SOI : node::ObjectWrap
             return false;
         }
 
-        void addUsed()
+        void addStat()
         {
-            Used *u = new Used();
-            if (SOI::getUsedsSize() > MAXHOLD)
+            Stat *s = new Stat();
+            if (SOI::getStatsSize() > MAXHOLD)
             {
-                delete(SOI::useds.front()); // remove first item
-                SOI::useds.erase(SOI::useds.begin());
+                delete(SOI::stats.front()); // remove first item
+                SOI::stats.erase(SOI::stats.begin());
             }
-            SOI::useds.push_back(u);
+            SOI::stats.push_back(u);
         }
 
         Process *getProcess(int index)
@@ -117,9 +117,9 @@ class SOI : node::ObjectWrap
             return(SOI::processes.at(index));
         }
 
-        Used *getUsed(int index)
+        Stat *getStat(int index)
         {
-            return(SOI::useds.at(index));
+            return(SOI::stats.at(index));
         }
 
         bool processExists(string name)
@@ -137,9 +137,9 @@ class SOI : node::ObjectWrap
             return(SOI::processes.size());
         }
 
-        size_t getUsedsSize()
+        size_t getStatsSize()
         {
-            return(SOI::useds.size());
+            return(SOI::stats.size());
         }
 
         int shutdown()
@@ -290,22 +290,22 @@ class SOI : node::ObjectWrap
             system->Set(v8::String::New("mem"),      v8::Number::New(soi->getMem()));
             system->Set(v8::String::New("swap"),     v8::Number::New(soi->getSwap()));
             system->Set(v8::String::New("uptime"),   v8::Number::New(soi->getUptime()));
-            v8::Handle<v8::Array> useds = v8::Array::New(soi->getUsedsSize());
-            for (unsigned int i = 0; i < soi->getUsedsSize(); i++)
+            v8::Handle<v8::Array> stats = v8::Array::New(soi->getStatsSize());
+            for (unsigned int i = 0; i < soi->getStatsSize(); i++)
             {
                 v8::Handle<v8::Array> loads = v8::Array::New(); // 1min, 5min, 15min
-                loads->Set(v8::String::New("onemin"),     v8::Number::New(soi->getUsed(i)->getLoad(0)));
-                loads->Set(v8::String::New("fivemin"),    v8::Number::New(soi->getUsed(i)->getLoad(1)));
-                loads->Set(v8::String::New("fifteenmin"), v8::Number::New(soi->getUsed(i)->getLoad(2)));
-                v8::Handle<v8::Array> used = v8::Array::New();
-                used->Set(v8::String::New("timestamp"),   v8::Integer::New(soi->getUsed(i)->getTimestamp()));
-                used->Set(v8::String::New("loads"),       loads);
-                used->Set(v8::String::New("mem"),         v8::Number::New(soi->getUsed(i)->getMem()));
-                used->Set(v8::String::New("swap"),        v8::Number::New(soi->getUsed(i)->getSwap()));
-                used->Set(v8::String::New("process"),     v8::Number::New(soi->getUsed(i)->getProcess()));
-                useds->Set(i, used);
+                loads->Set(v8::String::New("onemin"),     v8::Number::New(soi->getStat(i)->getLoad(0)));
+                loads->Set(v8::String::New("fivemin"),    v8::Number::New(soi->getStat(i)->getLoad(1)));
+                loads->Set(v8::String::New("fifteenmin"), v8::Number::New(soi->getStat(i)->getLoad(2)));
+                v8::Handle<v8::Array> stat = v8::Array::New();
+                stat->Set(v8::String::New("timestamp"),   v8::Integer::New(soi->getStat(i)->getTimestamp()));
+                stat->Set(v8::String::New("loads"),       loads);
+                stat->Set(v8::String::New("mem"),         v8::Number::New(soi->getStat(i)->getMem()));
+                stat->Set(v8::String::New("swap"),        v8::Number::New(soi->getStat(i)->getSwap()));
+                stat->Set(v8::String::New("process"),     v8::Number::New(soi->getStat(i)->getProcess()));
+                stats->Set(i, stat);
             }
-            system->Set(v8::String::New("useds"), useds);
+            system->Set(v8::String::New("stats"), stats);
             return system;
         }
 };

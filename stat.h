@@ -3,13 +3,13 @@
  * (c) 2013 - Mathias Rohnstock
  **/
 
-#ifndef USED_H
-#define	USED_H
+#ifndef STAT_H
+#define	STAT_H
 
 using namespace std;
 
 // history of used system ressources
-class Used
+class Stat
 {
     private:
         time_t timestamp;
@@ -20,81 +20,81 @@ class Used
 
         void setTimestamp(time_t timestamp)
         {
-            Used::timestamp = timestamp;
+            Stat::timestamp = timestamp;
         }
 
         void setLoads(long one, long five, long fifteen)
         {
-            Used::loads.push_back(((float)one) / (float)(1 << SI_LOAD_SHIFT));
-            Used::loads.push_back(((float)five) / (float)(1 << SI_LOAD_SHIFT));
-            Used::loads.push_back(((float)fifteen) / (float)(1 << SI_LOAD_SHIFT));
+            Stat::loads.push_back(((float)one) / (float)(1 << SI_LOAD_SHIFT));
+            Stat::loads.push_back(((float)five) / (float)(1 << SI_LOAD_SHIFT));
+            Stat::loads.push_back(((float)fifteen) / (float)(1 << SI_LOAD_SHIFT));
         }
 
         void setMem(long mem)
         {
-            Used::mem = mem;
+            Stat::mem = mem;
         }
 
         void setSwap(long swap)
         {
-            Used::swap = swap;
+            Stat::swap = swap;
         }
 
         void setProcess(unsigned short process)
         {
-            Used::process = process;
+            Stat::process = process;
         }
 
     public:
-        Used()
+        Stat()
         {
             struct sysinfo info;
             time_t t = time(NULL);
             struct tm *current = NULL;
             current = localtime(&t);
-            Used::setTimestamp(mktime(current));
+            Stat::setTimestamp(mktime(current));
             if (sysinfo(&info) != -1)
             {
-                Used::setLoads(info.loads[0], info.loads[1], info.loads[2]);
-                Used::setMem((info.totalram - info.freeram)/1024/1024);
-                Used::setSwap((info.totalswap - info.freeswap)/1024/1024);
-                Used::setProcess(info.procs);
+                Stat::setLoads(info.loads[0], info.loads[1], info.loads[2]);
+                Stat::setMem((info.totalram - info.freeram)/1024/1024);
+                Stat::setSwap((info.totalswap - info.freeswap)/1024/1024);
+                Stat::setProcess(info.procs);
             }
             else
             {
-                Used::setLoads(-1, -1, -1);
-                Used::setMem(-1);
-                Used::setSwap(-1);
-                Used::setProcess(-1);
+                Stat::setLoads(-1, -1, -1);
+                Stat::setMem(-1);
+                Stat::setSwap(-1);
+                Stat::setProcess(-1);
             }
         }
 
         time_t getTimestamp()
         {
-            return Used::timestamp;
+            return Stat::timestamp;
         }
 
         float getLoad(int index)
         {
-            return Used::loads.at(index);
+            return Stat::loads.at(index);
         }
 
         long getMem()
         {
-            return Used::mem;
+            return Stat::mem;
         }
 
         long getSwap()
         {
-            return Used::swap;
+            return Stat::swap;
         }
 
         unsigned short getProcess()
         {
-            return Used::process;
+            return Stat::process;
         }
 
 };
 
-#endif	/* USED_H */
+#endif	/* STAT_H */
 
