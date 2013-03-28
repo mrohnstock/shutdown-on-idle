@@ -344,7 +344,7 @@ class SOI : node::ObjectWrap
             system->Set(v8::String::New("mem"),      v8::Number::New(soi->getMem()));
             system->Set(v8::String::New("swap"),     v8::Number::New(soi->getSwap()));
             system->Set(v8::String::New("uptime"),   v8::Number::New(soi->getUptime()));
-            v8::Handle<v8::Array> stats = v8::Array::New(soi->getStatsSize());
+            v8::Handle<v8::Array> stats = v8::Array::New();
             for (unsigned int i = 0; i < soi->getStatsSize(); i++)
             {
                 v8::Handle<v8::Array> loads = v8::Array::New(); // 1min, 5min, 15min
@@ -352,8 +352,8 @@ class SOI : node::ObjectWrap
                 loads->Set(v8::String::New("fivemin"),    v8::Number::New(soi->getStat(i)->getLoad(1)));
                 loads->Set(v8::String::New("fifteenmin"), v8::Number::New(soi->getStat(i)->getLoad(2)));
                 v8::Handle<v8::Array> stat = v8::Array::New();
-                stat->Set(v8::String::New("timestamp"),   v8::Integer::New(soi->getStat(i)->getTimestamp()));
                 stat->Set(v8::String::New("loads"),       loads);
+                stat->Set(v8::String::New("timestamp"),   v8::Number::New(soi->getStat(i)->getTimestamp()));
                 stat->Set(v8::String::New("mem"),         v8::Number::New(soi->getStat(i)->getMem()));
                 stat->Set(v8::String::New("swap"),        v8::Number::New(soi->getStat(i)->getSwap()));
                 stat->Set(v8::String::New("process"),     v8::Number::New(soi->getStat(i)->getProcess()));

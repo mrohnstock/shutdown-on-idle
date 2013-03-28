@@ -1,27 +1,27 @@
     var load = $("#load").get(0).getContext("2d");
     var load_data = {
-            labels : [{% for used in system.useds %}"{{ used.timestamp|date("H:i") }}h"{% if not loop.last %},{% endif %}{% endfor %}],
+            labels : [{% for stat in system.stats %}"{{ stat.timestamp|date("H:i") }}h"{% if not loop.last %},{% endif %}{% endfor %}],
             datasets : [
                     {
                             fillColor : "rgba(220,220,220,0.5)",
                             strokeColor : "rgba(220,220,220,1)",
                             pointColor : "rgba(220,220,220,1)",
                             pointStrokeColor : "#fff",
-                            data : [{% for used in system.useds %}{{ used.loads.onemin }}{% if not loop.last %},{% endif %}{% endfor %}]
+                            data : [{% for stat in system.stats %}{{ stat.loads.onemin }}{% if not loop.last %},{% endif %}{% endfor %}]
                     },
                     {
                             fillColor : "rgba(151,187,205,0.5)",
                             strokeColor : "rgba(151,187,205,1)",
                             pointColor : "rgba(151,187,205,1)",
                             pointStrokeColor : "#fff",
-                            data : [{% for used in system.useds %}{{ used.loads.fivemin }}{% if not loop.last %},{% endif %}{% endfor %}]
+                            data : [{% for stat in system.stats %}{{ stat.loads.fivemin }}{% if not loop.last %},{% endif %}{% endfor %}]
                     },
                     {
                             fillColor : "rgba(155,0,0,0.5)",
                             strokeColor : "rgba(155,0,0,1)",
                             pointColor : "rgba(155,0,0,1)",
                             pointStrokeColor : "#fff",
-                            data : [{% for used in system.useds %}{{ used.loads.fifteenmin }}{% if not loop.last %},{% endif %}{% endfor %}]
+                            data : [{% for stat in system.stats %}{{ stat.loads.fifteenmin }}{% if not loop.last %},{% endif %}{% endfor %}]
                     }
             ]
     }

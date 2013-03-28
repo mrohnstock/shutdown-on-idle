@@ -1,13 +1,13 @@
     var swap = $("#swap").get(0).getContext("2d");
     var swap_data = {
-            labels : [{% for used in system.useds %}"{{ used.timestamp|date("H:i") }}h"{% if not loop.last %},{% endif %}{% endfor %}],
+            labels : [{% for stat in system.stats %}"{{ stat.timestamp|date("H:i") }}h"{% if not loop.last %},{% endif %}{% endfor %}],
             datasets : [
                     {
                             fillColor : "rgba(220,220,220,0.5)",
                             strokeColor : "rgba(220,220,220,1)",
                             pointColor : "rgba(220,220,220,1)",
                             pointStrokeColor : "#fff",
-                            data : [{% for used in system.useds %}{{ used.swap }}{% if not loop.last %},{% endif %}{% endfor %}]
+                            data : [{% for stat in system.stats %}{{ stat.swap }}{% if not loop.last %},{% endif %}{% endfor %}]
                     }
             ]
     }
